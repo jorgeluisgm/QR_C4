@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Recorridos - Seguridad Patrimonial</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: #666;
+            transition: all 0.3s;
+        }
+        
+        .nav-tab.active {
+            background: white;
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+        }
+        
+        .content {
+            padding: 20px;
+            min-height: 400px;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .qr-scanner {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .camera-container {
+            position: relative;
+            display: none;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .camera-video {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid #3498db;
+        }
+        
+        .camera-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 2px solid #e74c3c;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        
+        .camera-controls {
+            margin-top: 10px;
+        }
+        
+        .stop-camera-btn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .scan-button {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .scan-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .scan-button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .checkpoint-list {
+            margin-top: 15px;
+        }
+        
+        .checkpoint {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .checkpoint.completed {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        
+        .checkpoint.current {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .checkpoint-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        
+        .checkpoint.completed .checkpoint-icon {
+            background: #28a745;
+            color: white;
+        }
+        
+        .checkpoint.current .checkpoint-icon {
+            background: #ffc107;
+            color: white;
+        }
+        
+        .checkpoint:not(.completed):not(.current) .checkpoint-icon {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .qr-codes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .qr-code-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #dee2e6;
+        }
+        
+        .qr-code {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 10px;
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .patrol-history {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .patrol-record {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .patrol-record.completed {
+            border-left-color: #28a745;
+        }
+        
+        .admin-controls {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .admin-button {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .admin-button.secondary {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+            
+            .qr-codes-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Sistema de Recorridos</h1>
+            <p>Seguridad Patrimonial - Planta de Zapatos</p>
+            <div id="current-time" style="margin-top: 10px; font-size: 0.9em;"></div>
+        </div>
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showSection('patrol')">Recorrido</button>
+            <button class="nav-tab" onclick="showSection('history')">Historial</button>
+            <button class="nav-tab" onclick="showSection('admin')">Admin</button>
+        </div>
+        
+        <div class="content">
+            <!-- Sección de Recorrido -->
+            <div id="patrol-section" class="section active">
+                <div id="patrol-status" class="status-message status-warning">
+                    Listo para iniciar recorrido
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <div style="text-align: center; margin-top: 5px;">
+                        <span id="progress-text">0/10 puntos completados</span>
+                    </div>
+                </div>
+                
+                <div class="qr-scanner">
+                    <button id="scan-button" class="scan-button" onclick="startQRScanner()">
+                        📱 Escanear Código QR
+                    </button>
+                    <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                        Escanea los códigos QR en orden secuencial
+                    </div>
+                </div>
+                
+                <!-- Contenedor de la cámara -->
+                <div id="camera-container" class="camera-container">
+                    <video id="camera-video" class="camera-video" autoplay></video>
+                    <div class="camera-overlay"></div>
+                    <div class="camera-controls">
+                        <button class="stop-camera-btn" onclick="stopQRScanner()">
+                            ❌ Cerrar Cámara
+                        </button>
+                        <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                            Apunta la cámara al código QR para escanearlo
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="checkpoint-list" id="checkpoint-list">
+                    <!-- Los checkpoints se generarán dinámicamente -->
+                </div>
+                
+                <button id="complete-patrol" class="scan-button hidden" style="background: linear-gradient(45deg, #27ae60, #2ecc71); width: 100%;" onclick="completePatrol()">
+                    ✅ Finalizar Recorrido
+                </button>
+            </div>
+            
+            <!-- Sección de Historial -->
+            <div id="history-section" class="section">
+                <h3 style="margin-bottom: 15px;">📋 Historial de Recorridos</h3>
+                <div id="patrol-history" class="patrol-history">
+                    <!-- El historial se generará dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- Sección de Administración -->
+            <div id="admin-section" class="section">
+                <h3 style="margin-bottom: 15px;">⚙️ Panel de Administración</h3>
+                
+                <div class="status-message status-warning">
+                    <strong>Códigos QR Activos:</strong> Generados el <span id="qr-generation-date"></span>
+                </div>
+                
+                <div class="admin-controls">
+                    <button class="admin-button" onclick="regenerateQRCodes()">
+                        🔄 Regenerar Códigos QR
+                    </button>
+                    <button class="admin-button secondary" onclick="showQRCodes()">
+                        👁️ Ver Códigos QR
+                    </button>
+                    <button class="admin-button secondary" onclick="testScanMode()">
+                        🧪 Modo Prueba
+                    </button>
+                    <button class="admin-button secondary" onclick="exportHistory()">
+                        📊 Exportar Historial
+                    </button>
+                    <button class="admin-button secondary" onclick="resetSystem()">
+                        🗑️ Limpiar Sistema
+                    </button>
+                </div>
+                
+                <div id="qr-codes-display" class="hidden">
+                    <h4 style="margin: 20px 0 10px;">Códigos QR Actuales:</h4>
+                    <div class="qr-codes-grid" id="qr-codes-grid">
+                        <!-- Los códigos QR se mostrarán aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+    <script>
+        // Estado global de la aplicación
+        let currentPatrol = {
+            id: null,
+            startTime: null,
+            checkpoints: [],
+            currentCheckpoint: 0,
+            completed: false
+        };
+
+        let checkpointData = [
+            { id: 1, name: "Entrada Principal", location: "Acceso frontal" },
+            { id: 2, name: "Área de Producción", location: "Planta principal" },
+            { id: 3, name: "Almacén", location: "Bodega de materiales" },
+            { id: 4, name: "Oficinas", location: "Área administrativa" },
+            { id: 5, name: "Comedor", location: "Área de descanso" },
+            { id: 6, name: "Baños", location: "Servicios sanitarios" },
+            { id: 7, name: "Salida de Emergencia", location: "Puerta trasera" },
+            { id: 8, name: "Estacionamiento", location: "Área de vehículos" },
+            { id: 9, name: "Perímetro Norte", location: "Cerca exterior" },
+            { id: 10, name: "Perímetro Sur", location: "Cerca posterior" }
+        ];
+
+        let qrCodes = {};
+        let patrolHistory = [];
+        let qrSecretKey = "SEGURIDAD_PATRIMONIAL_2025"; // Clave secreta para validación
+        let currentStream = null;
+        let scanningInterval = null;
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+            generateQRCodes();
+            loadPatrolHistory();
+            initializeCheckpoints();
+            updatePatrolDisplay();
+        });
+
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = 
+                now.toLocaleDateString('es-MX') + ' - ' + now.toLocaleTimeString('es-MX');
+        }
+
+        function showSection(sectionName) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remover clase active de todos los tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Mostrar la sección seleccionada
+            document.getElementById(sectionName + '-section').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Actualizar contenido específico
+            if (sectionName === 'history') {
+                displayPatrolHistory();
+            }
+        }
+
+        function generateQRCodes() {
+            const timestamp = Date.now();
+            const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            qrCodes = {};
+            
+            checkpointData.forEach(checkpoint => {
+                const qrData = {
+                    system: "SEGURIDAD_PATRIMONIAL",
+                    checkpointId: checkpoint.id,
+                    checkpointName: checkpoint.name,
+                    location: checkpoint.location,
+                    generatedDate: dateStr,
+                    timestamp: timestamp,
+                    hash: generateSecureHash(checkpoint.id, timestamp, qrSecretKey)
+                };
+                qrCodes[checkpoint.id] = JSON.stringify(qrData);
+            });
+            
+            document.getElementById('qr-generation-date').textContent = new Date().toLocaleString('es-MX');
+        }
+
+        function generateSecureHash(checkpointId, timestamp, secretKey) {
+            const input = checkpointId + timestamp + secretKey;
+            let hash = 0;
+            for (let i = 0; i < input.length; i++) {
+                const char = input.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convertir a 32-bit integer
+            }
+            return Math.abs(hash).toString(16);
+        }
+
+        function validateQRCode(qrDataString) {
+            try {
+                const qrData = JSON.parse(qrDataString);
+                
+                // Verificar que es de nuestro sistema
+                if (qrData.system !== "SEGURIDAD_PATRIMONIAL") {
+                    return { valid: false, error: "Código QR no pertenece a este sistema" };
+                }
+                
+                // Verificar que el checkpoint existe
+                const checkpoint = checkpointData.find(cp => cp.id === qrData.checkpointId);
+                if (!checkpoint) {
+                    return { valid: false, error: "Punto de control no válido" };
+                }
+                
+                // Verificar hash de seguridad
+                const expectedHash = generateSecureHash(qrData.checkpointId, qrData.timestamp, qrSecretKey);
+                if (qrData.hash !== expectedHash) {
+                    return { valid: false, error: "Código QR no autorizado o modificado" };
+                }
+                
+                // Verificar que no sea muy antiguo (máximo 30 días)
+                const maxAge = 30 * 24 * 60 * 60 * 1000; // 30 días en millisegundos
+                if (Date.now() - qrData.timestamp > maxAge) {
+                    return { valid: false, error: "Código QR expirado" };
+                }
+                
+                return { valid: true, data: qrData };
+                
+            } catch (error) {
+                return { valid: false, error: "Formato de código QR inválido" };
+            }
+        }
+
+        function initializeCheckpoints() {
+            currentPatrol = {
+                id: generatePatrolId(),
+                startTime: new Date(),
+                checkpoints: checkpointData.map(cp => ({
+                    ...cp,
+                    completed: false,
+                    timestamp: null
+                })),
+                currentCheckpoint: 0,
+                completed: false
+            };
+        }
+
+        function generatePatrolId() {
+            return 'PATROL-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
+        }
+
+        function updatePatrolDisplay() {
+            const checkpointList = document.getElementById('checkpoint-list');
+            checkpointList.innerHTML = '';
+            
+            currentPatrol.checkpoints.forEach((checkpoint, index) => {
+                const div = document.createElement('div');
+                div.className = 'checkpoint';
+                
+                if (checkpoint.completed) {
+                    div.classList.add('completed');
+                } else if (index === currentPatrol.currentCheckpoint) {
+                    div.classList.add('current');
+                }
+                
+                div.innerHTML = `
+                    <div class="checkpoint-icon">
+                        ${checkpoint.completed ? '✓' : (index === currentPatrol.currentCheckpoint ? '→' : index + 1)}
+                    </div>
+                    <div>
+                        <strong>${checkpoint.name}</strong><br>
+                        <small>${checkpoint.location}</small>
+                        ${checkpoint.completed ? `<br><small style="color: #28a745;">Completado: ${checkpoint.timestamp.toLocaleTimeString('es-MX')}</small>` : ''}
+                    </div>
+                `;
+                
+                checkpointList.appendChild(div);
+            });
+            
+            // Actualizar barra de progreso
+            const progress = (currentPatrol.currentCheckpoint / currentPatrol.checkpoints.length) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = 
+                `${currentPatrol.currentCheckpoint}/${currentPatrol.checkpoints.length} puntos completados`;
+            
+            // Actualizar estado
+            updatePatrolStatus();
+        }
+
+        function updatePatrolStatus() {
+            const statusDiv = document.getElementById('patrol-status');
+            const scanButton = document.getElementById('scan-button');
+            const completeButton = document.getElementById('complete-patrol');
+            
+            if (currentPatrol.completed) {
+                statusDiv.className = 'status-message status-success';
+                statusDiv.textContent = '✅ Recorrido completado exitosamente';
+                scanButton.style.display = 'none';
+                completeButton.classList.add('hidden');
+            } else if (currentPatrol.currentCheckpoint === 0) {
+                statusDiv.className = 'status-message status-warning';
+                statusDiv.textContent = 'Listo para iniciar recorrido - Escanea el primer código QR';
+                scanButton.disabled = false;
+                completeButton.classList.add('hidden');
+            } else if (currentPatrol.currentCheckpoint === currentPatrol.checkpoints.length) {
+                statusDiv.className = 'status-message status-success';
+                statusDiv.textContent = '🎯 Todos los puntos escaneados - Finaliza el recorrido';
+                scanButton.style.display = 'none';
+                completeButton.classList.remove('hidden');
+            } else {
+                statusDiv.className = 'status-message status-warning';
+                statusDiv.textContent = `Siguiente punto: ${currentPatrol.checkpoints[currentPatrol.currentCheckpoint].name}`;
+                scanButton.disabled = false;
+                completeButton.classList.add('hidden');
+            }
+        }
+
+        // Funciones de cámara y escaneo QR
+        async function startQRScanner() {
+            try {
+                // Solicitar acceso a la cámara
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment' // Cámara trasera preferida
+                    } 
+                });
+                
+                currentStream = stream;
+                const video = document.getElementById('camera-video');
+                video.srcObject = stream;
+                
+                // Mostrar contenedor de cámara
+                document.getElementById('camera-container').style.display = 'block';
+                document.getElementById('scan-button').style.display = 'none';
+                
+                // Iniciar el escaneo continuo
+                startContinuousScanning();
+                
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                let errorMessage = 'No se pudo acceder a la cámara. ';
+                
+                if (error.name === 'NotAllowedError') {
+                    errorMessage += 'Por favor, permite el acceso a la cámara en tu navegador.';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage += 'No se encontró una cámara en el dispositivo.';
+                } else {
+                    errorMessage += 'Verifica que tu dispositivo tenga cámara y que esté funcionando.';
+                }
+                
+                showMessage('error', errorMessage);
+            }
+        }
+
+        function stopQRScanner() {
+            // Detener el stream de video
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            
+            // Detener el escaneo continuo
+            if (scanningInterval) {
+                clearInterval(scanningInterval);
+                scanningInterval = null;
+            }
+            
+            // Ocultar contenedor de cámara
+            document.getElementById('camera-container').style.display = 'none';
+            document.getElementById('scan-button').style.display = 'inline-block';
+        }
+
+        function startContinuousScanning() {
+            const video = document.getElementById('camera-video');
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            scanningInterval = setInterval(() => {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.height = video.videoHeight;
+                    canvas.width = video.videoWidth;
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    
+                    if (code) {
+                        // QR detectado, procesar
+                        stopQRScanner();
+                        processQRScan(code.data);
+                    }
+                }
+            }, 300); // Escanear cada 300ms
+        }
+
+        function simulateScan() {
+            // Función de respaldo para testing (mantener para pruebas)
+            if (currentPatrol.currentCheckpoint >= currentPatrol.checkpoints.length) {
+                return;
+            }
+            
+            const currentCheckpointId = currentPatrol.checkpoints[currentPatrol.currentCheckpoint].id;
+            const qrData = qrCodes[currentCheckpointId];
+            
+            setTimeout(() => {
+                processQRScan(qrData);
+            }, 1000);
+        }
+
+        function processQRScan(qrDataString) {
+            // Validar el código QR
+            const validation = validateQRCode(qrDataString);
+            
+            if (!validation.valid) {
+                showMessage('error', '❌ ' + validation.error);
+                return;
+            }
+            
+            const qrData = validation.data;
+            const expectedCheckpointId = currentPatrol.checkpoints[currentPatrol.currentCheckpoint].id;
+            
+            // Verificar que es el checkpoint correcto en secuencia
+            if (qrData.checkpointId !== expectedCheckpointId) {
+                const expectedCheckpoint = checkpointData.find(cp => cp.id === expectedCheckpointId);
+                const scannedCheckpoint = checkpointData.find(cp => cp.id === qrData.checkpointId);
+                
+                showMessage('error', 
+                    `❌ Código QR incorrecto.\n` +
+                    `Esperado: ${expectedCheckpoint.name}\n` +
+                    `Escaneado: ${scannedCheckpoint.name}\n` +
+                    `Debes seguir el orden secuencial.`
+                );
+                return;
+            }
+            
+            // Marcar checkpoint como completado
+            currentPatrol.checkpoints[currentPatrol.currentCheckpoint].completed = true;
+            currentPatrol.checkpoints[currentPatrol.currentCheckpoint].timestamp = new Date();
+            currentPatrol.currentCheckpoint++;
+            
+            showMessage('success', 
+                `✅ ${qrData.checkpointName} escaneado correctamente\n` +
+                `📍 ${qrData.location}`
+            );
+            updatePatrolDisplay();
+        }
+
+        function completePatrol() {
+            if (currentPatrol.currentCheckpoint !== currentPatrol.checkpoints.length) {
+                showMessage('error', 'Debes completar todos los puntos de control primero');
+                return;
+            }
+            
+            currentPatrol.completed = true;
+            currentPatrol.endTime = new Date();
+            
+            // Guardar en historial
+            patrolHistory.unshift({...currentPatrol});
+            savePatrolHistory();
+            
+            // Simular envío a WhatsApp
+            const duration = Math.round((currentPatrol.endTime - currentPatrol.startTime) / 60000);
+            const message = `🛡️ RECORRIDO COMPLETADO\n` +
+                           `ID: ${currentPatrol.id}\n` +
+                           `Guardia: [Nombre del guardia]\n` +
+                           `Inicio: ${currentPatrol.startTime.toLocaleTimeString('es-MX')}\n` +
+                           `Fin: ${currentPatrol.endTime.toLocaleTimeString('es-MX')}\n` +
+                           `Duración: ${duration} minutos\n` +
+                           `Puntos: ${currentPatrol.checkpoints.length}/${currentPatrol.checkpoints.length}`;
+            
+            console.log('Mensaje para WhatsApp:', message);
+            showMessage('success', '🎉 Recorrido completado y reportado exitosamente');
+            
+            updatePatrolDisplay();
+            
+            // Reiniciar después de 5 segundos
+            setTimeout(() => {
+                initializeCheckpoints();
+                updatePatrolDisplay();
+            }, 5000);
+        }
+
+        function showMessage(type, text) {
+            const existingMessage = document.querySelector('.temp-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            const div = document.createElement('div');
+            div.className = `status-message status-${type} temp-message`;
+            div.textContent = text;
+            
+            const patrolSection = document.getElementById('patrol-section');
+            patrolSection.insertBefore(div, patrolSection.firstChild);
+            
+            setTimeout(() => {
+                div.remove();
+            }, 3000);
+        }
+
+        function loadPatrolHistory() {
+            // En una implementación real, esto cargaría desde una base de datos
+            const stored = localStorage.getItem('patrolHistory');
+            if (stored) {
+                try {
+                    patrolHistory = JSON.parse(stored);
+                    // Convertir strings de fecha de vuelta a objetos Date
+                    patrolHistory.forEach(patrol => {
+                        patrol.startTime = new Date(patrol.startTime);
+                        if (patrol.endTime) patrol.endTime = new Date(patrol.endTime);
+                        patrol.checkpoints.forEach(cp => {
+                            if (cp.timestamp) cp.timestamp = new Date(cp.timestamp);
+                        });
+                    });
+                } catch (error) {
+                    console.error('Error loading patrol history:', error);
+                    patrolHistory = [];
+                }
+            }
+        }
+
+        function savePatrolHistory() {
+            try {
+                localStorage.setItem('patrolHistory', JSON.stringify(patrolHistory));
+            } catch (error) {
+                console.error('Error saving patrol history:', error);
+            }
+        }
+
+        function displayPatrolHistory() {
+            const historyContainer = document.getElementById('patrol-history');
+            
+            if (patrolHistory.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="status-message status-warning">
+                        No hay recorridos registrados aún
+                    </div>
+                `;
+                return;
+            }
+            
+            historyContainer.innerHTML = '';
+            
+            patrolHistory.slice(0, 20).forEach(patrol => { // Mostrar últimos 20
+                const div = document.createElement('div');
+                div.className = `patrol-record ${patrol.completed ? 'completed' : ''}`;
+                
+                const duration = patrol.endTime ? 
+                    Math.round((patrol.endTime - patrol.startTime) / 60000) : 
+                    Math.round((new Date() - patrol.startTime) / 60000);
+                
+                const completedCheckpoints = patrol.checkpoints.filter(cp => cp.completed).length;
+                
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 8px;">
+                        <strong>${patrol.id}</strong>
+                        <span style="font-size: 0.8em; color: #666;">
+                            ${patrol.startTime.toLocaleDateString('es-MX')} - ${patrol.startTime.toLocaleTimeString('es-MX')}
+                        </span>
+                    </div>
+                    <div style="font-size: 0.9em;">
+                        <span style="color: ${patrol.completed ? '#28a745' : '#ffc107'};">
+                            ${patrol.completed ? '✅ Completado' : '⏳ En progreso'}
+                        </span> | 
+                        Puntos: ${completedCheckpoints}/${patrol.checkpoints.length} | 
+                        Duración: ${duration} min
+                    </div>
+                    ${patrol.endTime ? `<div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                        Finalizado: ${patrol.endTime.toLocaleTimeString('es-MX')}
+                    </div>` : ''}
+                `;
+                
+                historyContainer.appendChild(div);
+            });
+        }
+
+        // Funciones de administración
+        function regenerateQRCodes() {
+            if (confirm('¿Estás seguro de regenerar todos los códigos QR? Los códigos anteriores dejarán de funcionar.')) {
+                generateQRCodes();
+                showAdminMessage('success', '✅ Códigos QR regenerados exitosamente');
+            }
+        }
+
+        function showQRCodes() {
+            const display = document.getElementById('qr-codes-display');
+            const grid = document.getElementById('qr-codes-grid');
+            
+            if (display.classList.contains('hidden')) {
+                // Mostrar códigos QR
+                grid.innerHTML = '';
+                
+                checkpointData.forEach(checkpoint => {
+                    const div = document.createElement('div');
+                    div.className = 'qr-code-item';
+                    div.innerHTML = `
+                        <div class="qr-code" id="qr-${checkpoint.id}"></div>
+                        <div><strong>${checkpoint.name}</strong></div>
+                        <div style="font-size: 0.8em; color: #666;">${checkpoint.location}</div>
+                    `;
+                    grid.appendChild(div);
+                    
+                    // Generar código QR visual
+                    QRCode.toCanvas(document.getElementById(`qr-${checkpoint.id}`), qrCodes[checkpoint.id], {
+                        width: 100,
+                        height: 100,
+                        margin: 1
+                    });
+                });
+                
+                display.classList.remove('hidden');
+                event.target.textContent = '🙈 Ocultar Códigos QR';
+            } else {
+                // Ocultar códigos QR
+                display.classList.add('hidden');
+                event.target.textContent = '👁️ Ver Códigos QR';
+            }
+        }
+
+        let testMode = false;
+        function testScanMode() {
+            testMode = !testMode;
+            const button = event.target;
+            
+            if (testMode) {
+                button.textContent = '📱 Modo Normal';
+                button.style.background = 'linear-gradient(45deg, #27ae60, #2ecc71)';
+                showAdminMessage('success', '🧪 Modo prueba activado - El botón de escaneo simulará lecturas');
+                
+                // Modificar la función de escaneo para modo prueba
+                const scanButton = document.getElementById('scan-button');
+                scanButton.onclick = simulateScan;
+                scanButton.textContent = '🧪 Simular Escaneo';
+            } else {
+                button.textContent = '🧪 Modo Prueba';
+                button.style.background = 'linear-gradient(45deg, #95a5a6, #7f8c8d)';
+                showAdminMessage('warning', '📱 Modo normal activado - El escaneo usará la cámara real');
+                
+                // Restaurar función normal
+                const scanButton = document.getElementById('scan-button');
+                scanButton.onclick = startQRScanner;
+                scanButton.textContent = '📱 Escanear Código QR';
+            }
+        }
+
+        function exportHistory() {
+            if (patrolHistory.length === 0) {
+                showAdminMessage('warning', 'No hay historial para exportar');
+                return;
+            }
+            
+            // Crear CSV con el historial
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "ID,Fecha,Hora Inicio,Hora Fin,Duracion (min),Estado,Puntos Completados,Total Puntos\n";
+            
+            patrolHistory.forEach(patrol => {
+                const duration = patrol.endTime ? 
+                    Math.round((patrol.endTime - patrol.startTime) / 60000) : 
+                    'N/A';
+                const completedCheckpoints = patrol.checkpoints.filter(cp => cp.completed).length;
+                
+                csvContent += `${patrol.id},${patrol.startTime.toLocaleDateString('es-MX')},` +
+                             `${patrol.startTime.toLocaleTimeString('es-MX')},` +
+                             `${patrol.endTime ? patrol.endTime.toLocaleTimeString('es-MX') : 'N/A'},` +
+                             `${duration},${patrol.completed ? 'Completado' : 'Incompleto'},` +
+                             `${completedCheckpoints},${patrol.checkpoints.length}\n`;
+            });
+            
+            // Descargar archivo
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `historial_recorridos_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showAdminMessage('success', '📊 Historial exportado exitosamente');
+        }
+
+        function resetSystem() {
+            if (confirm('¿ADVERTENCIA! Esto eliminará todo el historial y reiniciará el sistema. ¿Continuar?')) {
+                if (confirm('Esta acción no se puede deshacer. ¿Estás completamente seguro?')) {
+                    // Limpiar historial
+                    patrolHistory = [];
+                    localStorage.removeItem('patrolHistory');
+                    
+                    // Reiniciar patrulla actual
+                    initializeCheckpoints();
+                    updatePatrolDisplay();
+                    
+                    // Regenerar códigos QR
+                    generateQRCodes();
+                    
+                    showAdminMessage('success', '🗑️ Sistema reiniciado completamente');
+                    
+                    // Volver a la sección de recorrido
+                    setTimeout(() => {
+                        showSection('patrol');
+                    }, 2000);
+                }
+            }
+        }
+
+        function showAdminMessage(type, text) {
+            const existingMessage = document.querySelector('.admin-temp-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            const div = document.createElement('div');
+            div.className = `status-message status-${type} admin-temp-message`;
+            div.textContent = text;
+            
+            const adminSection = document.getElementById('admin-section');
+            adminSection.insertBefore(div, adminSection.children[1]);
+            
+            setTimeout(() => {
+                if (div.parentNode) {
+                    div.remove();
+                }
+            }, 3000);
+        }
+
+        // Función mejorada de simulación para testing
+        function simulateScan() {
+            if (currentPatrol.currentCheckpoint >= currentPatrol.checkpoints.length) {
+                showMessage('warning', 'Todos los puntos ya han sido completados');
+                return;
+            }
+            
+            // Simular tiempo de escaneo
+            showMessage('warning', '🧪 Simulando escaneo...');
+            
+            setTimeout(() => {
+                const currentCheckpointId = currentPatrol.checkpoints[currentPatrol.currentCheckpoint].id;
+                const qrData = qrCodes[currentCheckpointId];
+                processQRScan(qrData);
+            }, 1500);
+        }
+
+        // Manejo de errores de cámara mejorado
+        function handleCameraError(error) {
+            console.error('Camera error:', error);
+            
+            let errorMessage = '';
+            let showTestMode = false;
+            
+            switch (error.name) {
+                case 'NotAllowedError':
+                    errorMessage = '❌ Acceso a cámara denegado. Por favor permite el acceso en la configuración del navegador.';
+                    break;
+                case 'NotFoundError':
+                    errorMessage = '❌ No se encontró cámara en el dispositivo.';
+                    showTestMode = true;
+                    break;
+                case 'NotSupportedError':
+                    errorMessage = '❌ La cámara no es compatible con este navegador.';
+                    showTestMode = true;
+                    break;
+                case 'NotReadableError':
+                    errorMessage = '❌ La cámara está siendo usada por otra aplicación.';
+                    break;
+                default:
+                    errorMessage = '❌ Error desconocido al acceder a la cámara.';
+                    showTestMode = true;
+            }
+            
+            if (showTestMode) {
+                errorMessage += '\n\n💡 Puedes usar el "Modo Prueba" en la sección Admin para testing.';
+            }
+            
+            showMessage('error', errorMessage);
+        }
+
+        // Funciones de utilidad adicionales
+        function formatDuration(milliseconds) {
+            const minutes = Math.floor(milliseconds / 60000);
+            const seconds = Math.floor((milliseconds % 60000) / 1000);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function validatePatrolIntegrity() {
+            // Verificar que la patrulla actual esté en un estado válido
+            if (!currentPatrol.id || !currentPatrol.startTime) {
+                console.warn('Patrol integrity issue detected, reinitializing...');
+                initializeCheckpoints();
+                updatePatrolDisplay();
+                return false;
+            }
+            return true;
+        }
+
+        // Inicialización de eventos adicionales
+        document.addEventListener('visibilitychange', function() {
+            // Pausar/reanudar escaneo cuando la página pierde/gana foco
+            if (document.hidden && scanningInterval) {
+                clearInterval(scanningInterval);
+            } else if (!document.hidden && scanningInterval && currentStream) {
+                startContinuousScanning();
+            }
+        });
+
+        // Prevenir cierre accidental durante un recorrido activo
+        window.addEventListener('beforeunload', function(e) {
+            if (currentPatrol.currentCheckpoint > 0 && !currentPatrol.completed) {
+                e.preventDefault();
+                e.returnValue = '¿Estás seguro de salir? Hay un recorrido en progreso.';
+                return e.returnValue;
+            }
+        });
+    </script>
+</body>
+</html>
